@@ -209,6 +209,7 @@ void metaLoader(hls::stream<extendedEvent>&				eventEng2txEng_event,
 			// Sends everyting between txSar.not_ackd and txSar.app
 			if ((!rxSar2txEng_rsp.empty() && !txSar2txEng_upd_rsp.empty()) || ml_sarLoaded)
 			{
+				txTxSarReply txSar;
 				if (!ml_sarLoaded)
 				{
 					rxSar2txEng_rsp.read(rxSar);
@@ -225,7 +226,7 @@ void metaLoader(hls::stream<extendedEvent>&				eventEng2txEng_event,
 				meta.fin = 0;
 				meta.length = 0;
 
-				currLength = (txSar.app - ((ap_uint<WINDOW_BITS>)txSar.not_ackd));
+				ap_uint<WINDOW_BITS> currLength = (txSar.app - ((ap_uint<WINDOW_BITS>)txSar.not_ackd));
 				// Construct address before modifying txSar.not_ackd
 				ap_uint<32> pkgAddr;
 
@@ -1424,7 +1425,7 @@ void read_data_arbiter(stream<net_axis<WIDTH> >&		txBufferReadData,
 			
 		}
 #else
-		tps_state = 1
+		tps_state = 1;
 #endif
 		break;
 	case 1:
