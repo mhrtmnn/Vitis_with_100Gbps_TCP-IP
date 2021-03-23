@@ -121,6 +121,7 @@ void timerWrapper(	stream<rxRetransmitTimerUpdate>&	rxEng2timer_clearRetransmitT
 						timer2stateTable_releaseState);
 }
 
+#if 0
 //TODO use same code as in TX Engine
 void rxAppMemAccessBreakdown(stream<mmCmd> &inputMemAccess, stream<mmCmd> &outputMemAccess, stream<ap_uint<1> > &rxAppDoubleAccess) {
 #pragma HLS PIPELINE II=1
@@ -153,6 +154,48 @@ void rxAppMemAccessBreakdown(stream<mmCmd> &inputMemAccess, stream<mmCmd> &outpu
 		rxAppBreakdown = false;
 	}
 }
+#else
+// copied from tx_engine.cpp
+void rxAppMemAccessBreakdown(hls::stream<mmCmd>& inputMemAccess,
+                             hls::stream<mmCmd>& outputMemAccess,
+                             hls::stream< ap_uint<1> >&  memAccessBreakdown2txPkgStitcher)
+{
+	#pragma HLS PIPELINE II=1
+	#pragma HLS INLINE off
+
+	static ap_uint<1> txEngBreakdownState = 0;
+	static mmCmd cmd;
+	static ap_uint<WINDOW_BITS> lengthFirstAccess;
+
+	switch (txEngBreakdownState)
+	{
+	case 0:
+		if (!inputMemAccess.empty())
+		{
+			inputMemAccess.read(cmd);
+			std::cout << "TX read cmd: " << cmd.saddr << ", " << cmd.bbt << std::endl;
+			if ((cmd.saddr(WINDOW_BITS-1, 0) + cmd.bbt) > BUFFER_SIZE)
+			{
+				lengthFirstAccess = BUFFER_SIZE - cmd.saddr;
+				
+				memAccessBreakdown2txPkgStitcher.write(true);
+				outputMemAccess.write(mmCmd(cmd.saddr, lengthFirstAccess));
+				txEngBreakdownState = 1;
+			}
+			else
+			{
+				memAccessBreakdown2txPkgStitcher.write(false);
+				outputMemAccess.write(cmd);
+			}
+		}
+		break;
+	case 1:
+			outputMemAccess.write(mmCmd(0, cmd.bbt - lengthFirstAccess));
+			txEngBreakdownState = 0;
+		break;
+	}
+}
+#endif
 
 #if !(RX_DDR_BYPASS)
 template <int WIDTH> 
