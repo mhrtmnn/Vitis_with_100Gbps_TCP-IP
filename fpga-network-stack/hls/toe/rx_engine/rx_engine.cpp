@@ -1783,7 +1783,7 @@ void rxEngMemWrite(	hls::stream<net_axis<WIDTH> >& 	dataIn,
 	case IDLE_REG:
 		if ((cmd.saddr(WINDOW_BITS-1, 0) + cmd.bbt) > BUFFER_SIZE)
 		{
-			lengthFirstPkg = BUFFER_SIZE - cmd.saddr;
+			lengthFirstPkg = BUFFER_SIZE - cmd.saddr(WINDOW_BITS-1, 0);
 			remainingLength = lengthFirstPkg;
 			offset = lengthFirstPkg(DATA_KEEP_BITS - 1, 0);
 

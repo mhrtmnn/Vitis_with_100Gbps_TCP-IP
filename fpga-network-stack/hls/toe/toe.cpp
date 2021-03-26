@@ -166,6 +166,7 @@ void rxAppMemAccessBreakdown(hls::stream<mmCmd>& inputMemAccess,
 	static ap_uint<1> txEngBreakdownState = 0;
 	static mmCmd cmd;
 	static ap_uint<WINDOW_BITS> lengthFirstAccess;
+	static ap_uint<WINDOW_BITS> remainingLength = 0;
 
 	switch (txEngBreakdownState)
 	{
@@ -176,7 +177,7 @@ void rxAppMemAccessBreakdown(hls::stream<mmCmd>& inputMemAccess,
 			std::cout << "TX read cmd: " << cmd.saddr << ", " << cmd.bbt << std::endl;
 			if ((cmd.saddr(WINDOW_BITS-1, 0) + cmd.bbt) > BUFFER_SIZE)
 			{
-				lengthFirstAccess = BUFFER_SIZE - cmd.saddr;
+				lengthFirstAccess = BUFFER_SIZE - cmd.saddr(WINDOW_BITS-1, 0);
 				
 				memAccessBreakdown2txPkgStitcher.write(true);
 				outputMemAccess.write(mmCmd(cmd.saddr, lengthFirstAccess));
@@ -190,7 +191,9 @@ void rxAppMemAccessBreakdown(hls::stream<mmCmd>& inputMemAccess,
 		}
 		break;
 	case 1:
-			outputMemAccess.write(mmCmd(0, cmd.bbt - lengthFirstAccess));
+			cmd.saddr(WINDOW_BITS-1, 0) = 0;
+			remainingLength = cmd.bbt - lengthFirstAccess;
+			outputMemAccess.write(mmCmd(cmd.saddr, remainingLength));
 			txEngBreakdownState = 0;
 		break;
 	}
@@ -297,7 +300,7 @@ void rxAppMemDataRead(	stream<net_axis<WIDTH> >&	rxBufferReadData,
 
 			temp.data.range((rxAppMemRdOffset * 8) - 1, 0) = rxAppMemRdRxWord.data.range((rxAppMemRdOffset * 8) - 1, 0);	// In any case, insert the data of the new data word in the old one. Here we don't pay attention to the exact number of bytes in the new data word. In case they don't fill the entire remaining gap, there will be garbage in the output but it doesn't matter since the KEEP signal indicates which bytes are valid.
 			rxAppMemRdRxWord = rxBufferReadData.read();
-			temp.data.range(WIDTH-1, (rxAppMemRdOffset * 8)) = rxAppMemRdRxWord.data.range(((8 - rxAppMemRdOffset) * 8) - 1, 0);				// Buffer & realign temp into rxAppmemRdRxWord (which is a static variable)
+			temp.data.range(WIDTH-1, (rxAppMemRdOffset * 8)) = rxAppMemRdRxWord.data.range(((WIDTH/8 - rxAppMemRdOffset) * 8) - 1, 0);				// Buffer & realign temp into rxAppmemRdRxWord (which is a static variable)
 			ap_uint<8> tempCounter = keepToLen(rxAppMemRdRxWord.keep);					// Determine how any bytes are valid in the new data word. It might be that this is the only data word of the 2nd segment
 			rxAppOffsetBuffer = tempCounter - ((WIDTH/8) - rxAppMemRdOffset);				// Calculate the number of bytes to go into the next & final data word
 			if (rxAppMemRdRxWord.last == 1) {
@@ -323,9 +326,9 @@ void rxAppMemDataRead(	stream<net_axis<WIDTH> >&	rxBufferReadData,
 			temp.keep = ~uint64_t(0);
 			temp.last = 0;
 
-			temp.data.range((rxAppMemRdOffset * 8) - 1, 0) = rxAppMemRdRxWord.data.range(WIDTH-1, ((8 - rxAppMemRdOffset) * 8));
+			temp.data.range((rxAppMemRdOffset * 8) - 1, 0) = rxAppMemRdRxWord.data.range(WIDTH-1, ((WIDTH/8 - rxAppMemRdOffset) * 8));
 			rxAppMemRdRxWord = rxBufferReadData.read();							// Read the new data word in
-			temp.data.range(WIDTH-1, (rxAppMemRdOffset * 8)) = rxAppMemRdRxWord.data.range(((8 - rxAppMemRdOffset) * 8) - 1, 0);
+			temp.data.range(WIDTH-1, (rxAppMemRdOffset * 8)) = rxAppMemRdRxWord.data.range(((WIDTH/8 - rxAppMemRdOffset) * 8) - 1, 0);
 			ap_uint<8> tempCounter = keepToLen(rxAppMemRdRxWord.keep);			// Determine how any bytes are valid in the new data word. It might be that this is the only data word of the 2nd segment
 			rxAppOffsetBuffer = tempCounter - ((WIDTH/8) - rxAppMemRdOffset);				// Calculate the number of bytes to go into the next & final data word
 			if (rxAppMemRdRxWord.last == 1) {
@@ -348,7 +351,7 @@ void rxAppMemDataRead(	stream<net_axis<WIDTH> >&	rxBufferReadData,
 			temp.keep = lenToKeep(rxAppOffsetBuffer);
 			temp.last = 1;
 
-			temp.data.range((rxAppMemRdOffset * 8) - 1, 0) = rxAppMemRdRxWord.data.range(WIDTH-1, ((8 - rxAppMemRdOffset) * 8));
+			temp.data.range((rxAppMemRdOffset * 8) - 1, 0) = rxAppMemRdRxWord.data.range(WIDTH-1, ((WIDTH/8 - rxAppMemRdOffset) * 8));
 			rxDataRsp.write(temp);												// And finally write the data word to the output
 			//std::cerr << "Mem.Data: " << std::hex << temp.data << " - " << temp.keep << " - " << temp.last << std::endl;
 			rxAppState = RXAPP_IDLE;											// And go back to the idle stage

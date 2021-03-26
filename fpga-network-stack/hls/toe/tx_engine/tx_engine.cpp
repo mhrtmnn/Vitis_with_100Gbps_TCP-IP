@@ -1470,6 +1470,7 @@ void txEngMemAccessBreakdown(	hls::stream<mmCmd>&	inputMemAccess,
 	static ap_uint<1> txEngBreakdownState = 0;
 	static mmCmd cmd;
 	static ap_uint<WINDOW_BITS> lengthFirstAccess;
+	static ap_uint<WINDOW_BITS> remainingLength = 0;
 
 	switch (txEngBreakdownState)
 	{
@@ -1480,7 +1481,7 @@ void txEngMemAccessBreakdown(	hls::stream<mmCmd>&	inputMemAccess,
 			std::cout << "TX read cmd: " << cmd.saddr << ", " << cmd.bbt << std::endl;
 			if ((cmd.saddr(WINDOW_BITS-1, 0) + cmd.bbt) > BUFFER_SIZE)
 			{
-				lengthFirstAccess = BUFFER_SIZE - cmd.saddr;
+				lengthFirstAccess = BUFFER_SIZE - cmd.saddr(WINDOW_BITS-1, 0);
 				
 				memAccessBreakdown2txPkgStitcher.write(true);
 				outputMemAccess.write(mmCmd(cmd.saddr, lengthFirstAccess));
@@ -1494,7 +1495,9 @@ void txEngMemAccessBreakdown(	hls::stream<mmCmd>&	inputMemAccess,
 		}
 		break;
 	case 1:
-			outputMemAccess.write(mmCmd(0, cmd.bbt - lengthFirstAccess));
+			cmd.saddr(WINDOW_BITS-1, 0) = 0;
+			remainingLength = cmd.bbt - lengthFirstAccess;
+			outputMemAccess.write(mmCmd(cmd.saddr, remainingLength));
 			txEngBreakdownState = 0;
 		break;
 	}

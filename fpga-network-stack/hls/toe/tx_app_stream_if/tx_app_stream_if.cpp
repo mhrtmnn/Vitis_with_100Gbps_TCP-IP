@@ -160,7 +160,7 @@ void tasi_pkg_pusher(hls::stream<mmCmd>&					tasi_meta2pkgPushCmd,
 	case IMPROVE_TIMING:
 		if ((cmd.saddr(WINDOW_BITS-1, 0) + cmd.bbt) > BUFFER_SIZE)
 		{
-			lengthFirstPkg = BUFFER_SIZE - cmd.saddr;
+			lengthFirstPkg = BUFFER_SIZE - cmd.saddr(WINDOW_BITS-1, 0);
 			remainingLength = lengthFirstPkg;
 			offset = lengthFirstPkg(DATA_KEEP_BITS - 1, 0);
 
