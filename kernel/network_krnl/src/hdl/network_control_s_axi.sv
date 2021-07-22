@@ -115,22 +115,17 @@ module network_control_s_axi
 
 //------------------------Parameter----------------------
 localparam
-    ADDR_AP_CTRL             = 6'h00,
-    ADDR_GIE                 = 6'h04,
-    ADDR_IER                 = 6'h08,
-    ADDR_ISR                 = 6'h0c,
-    ADDR_IP_ADDR_DATA_0      = 6'h10,
-    ADDR_IP_ADDR_CTRL        = 6'h14,
-    ADDR_BOARD_NUMBER_DATA_0 = 6'h18,
-    ADDR_BOARD_NUMBER_CTRL   = 6'h1c,
-    ADDR_ARP_DATA_0          = 6'h20,
-    ADDR_ARP_CTRL            = 6'h24,
-    ADDR_AXI00_PTR0_DATA_0   = 6'h28,
-    ADDR_AXI00_PTR0_DATA_1   = 6'h2c,
-    ADDR_AXI00_PTR0_CTRL     = 6'h30,
-    ADDR_AXI01_PTR0_DATA_0   = 6'h34,
-    ADDR_AXI01_PTR0_DATA_1   = 6'h38,
-    ADDR_AXI01_PTR0_CTRL     = 6'h3c,
+    ADDR_AP_CTRL             = 8'h00,
+    ADDR_GIE                 = 8'h04,
+    ADDR_IER                 = 8'h08,
+    ADDR_ISR                 = 8'h0c,
+    ADDR_IP_ADDR_DATA_0      = 8'h10,
+    ADDR_BOARD_NUMBER_DATA_0 = 8'h18,
+    ADDR_ARP_DATA_0          = 8'h20,
+    ADDR_AXI00_PTR0_DATA_0   = 8'h28,
+    ADDR_AXI00_PTR0_DATA_1   = 8'h30,
+    ADDR_AXI01_PTR0_DATA_0   = 8'h38,
+    ADDR_AXI01_PTR0_DATA_1   = 8'h40,
     WRIDLE                   = 2'd0,
     WRDATA                   = 2'd1,
     WRRESP                   = 2'd2,
@@ -138,7 +133,7 @@ localparam
     RDIDLE                   = 2'd0,
     RDDATA                   = 2'd1,
     RDRESET                  = 2'd2,
-    ADDR_BITS         = 6;
+    ADDR_BITS                = 8;
 
 //------------------------Local signal-------------------
     reg  [1:0]                    wstate = WRRESET;
