@@ -58,6 +58,9 @@ void tie_off_udp(hls::stream<pkt512>& s_axis_udp_rx,
                hls::stream<pkt256>& s_axis_udp_rx_meta, 
                hls::stream<pkt256>& m_axis_udp_tx_meta );
 
+void tie_off_udp_rx(hls::stream<pkt512>& s_axis_udp_rx,
+               hls::stream<pkt256>& s_axis_udp_rx_meta);
+
 void tie_off_tcp_listen_port(hls::stream<pkt16>& m_axis_tcp_listen_port, hls::stream<pkt8>& s_axis_tcp_port_status);
 
 void tie_off_tcp_rx(hls::stream<pkt128>& s_axis_tcp_notification, 
@@ -320,6 +323,16 @@ void tie_off_udp(hls::stream<pkt512>& s_axis_udp_rx,
           pkt256 udp_rx_meta = s_axis_udp_rx_meta.read();
           m_axis_udp_tx_meta.write(udp_rx_meta);
      }
+}
+
+void tie_off_udp_rx(hls::stream<pkt512>& s_axis_udp_rx,
+               hls::stream<pkt256>& s_axis_udp_rx_meta)
+{
+     if (!s_axis_udp_rx.empty())
+          pkt512 udp_rx = s_axis_udp_rx.read();
+
+     if (!s_axis_udp_rx_meta.empty())
+          pkt256 udp_rx_meta = s_axis_udp_rx_meta.read();
 }
 
 void tie_off_tcp_listen_port(hls::stream<pkt16>& m_axis_tcp_listen_port, hls::stream<pkt8>& s_axis_tcp_port_status)

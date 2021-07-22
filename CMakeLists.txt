@@ -55,6 +55,8 @@ add_subdirectory(kernel/network_krnl)
 #User kernel IPs
 add_subdirectory(kernel/user_krnl/scatter_krnl/src/hls)
 add_subdirectory(kernel/user_krnl/iperf_krnl/src/hls)
+add_subdirectory(kernel/user_krnl/hls_send_krnl)
+add_subdirectory(kernel/user_krnl/hls_UDP_send_krnl)
 
 # user + nw = PE
 add_subdirectory(kernel/tapasco_PE)

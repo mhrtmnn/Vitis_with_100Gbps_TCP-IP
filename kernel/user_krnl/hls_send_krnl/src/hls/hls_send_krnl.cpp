@@ -26,7 +26,7 @@ void traffic_gen(int pkgWordCount, int expectedTxPkgCnt, hls::stream<ap_uint<512
 
 
 extern "C" {
-void hls_send_krnl(
+int hls_send_krnl(
                // Internal Stream
                hls::stream<pkt512>& s_axis_udp_rx, 
                hls::stream<pkt512>& m_axis_udp_tx, 
@@ -68,12 +68,14 @@ void hls_send_krnl(
 #pragma HLS INTERFACE axis port = m_axis_tcp_tx_meta
 #pragma HLS INTERFACE axis port = m_axis_tcp_tx_data
 #pragma HLS INTERFACE axis port = s_axis_tcp_tx_status
-#pragma HLS INTERFACE s_axilite port=useConn bundle = control
-#pragma HLS INTERFACE s_axilite port=pkgWordCount bundle = control
-#pragma HLS INTERFACE s_axilite port=basePort bundle = control
-#pragma HLS INTERFACE s_axilite port=expectedTxPkgCnt bundle = control
-#pragma HLS INTERFACE s_axilite port=baseIpAddress bundle=control
-#pragma HLS INTERFACE s_axilite port = return bundle = control
+
+// is done in TCL script: must adhere to Tapasco API
+// #pragma HLS INTERFACE s_axilite port=useConn bundle = control
+// #pragma HLS INTERFACE s_axilite port=pkgWordCount bundle = control
+// #pragma HLS INTERFACE s_axilite port=basePort bundle = control
+// #pragma HLS INTERFACE s_axilite port=expectedTxPkgCnt bundle = control
+// #pragma HLS INTERFACE s_axilite port=baseIpAddress bundle=control
+// #pragma HLS INTERFACE s_axilite port = return bundle = control
 
 static hls::stream<ap_uint<512> >    s_data_in;
 #pragma HLS STREAM variable=s_data_in depth=512
@@ -106,5 +108,6 @@ static hls::stream<ap_uint<512> >    s_data_in;
     
           tie_off_tcp_close_con(m_axis_tcp_close_connection);
 
+          return 0;
      }
 }

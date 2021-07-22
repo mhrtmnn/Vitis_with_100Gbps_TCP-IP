@@ -1,0 +1,42 @@
+
+open_project ${PROJECT_NAME}_prj
+
+open_solution "solution1"
+set_part ${FPGA_PART}
+create_clock -period ${CLOCK_PERIOD} -name default
+
+set_top ${PROJECT_NAME}
+
+add_files ${CMAKE_CURRENT_SOURCE_DIR}/src/hls/hls_UDP_send_krnl.cpp
+
+# moves ap_control into s_axi_AXILiteS port
+set_directive_interface -mode s_axilite ${PROJECT_NAME}
+
+# use tapasco offsets
+set_directive_interface -mode s_axilite -offset 0x20 ${PROJECT_NAME} useConn
+set_directive_interface -mode s_axilite -offset 0x30 ${PROJECT_NAME} pkgWordCount
+set_directive_interface -mode s_axilite -offset 0x40 ${PROJECT_NAME} basePort
+set_directive_interface -mode s_axilite -offset 0x50 ${PROJECT_NAME} expectedTxPkgCnt
+set_directive_interface -mode s_axilite -offset 0x60 ${PROJECT_NAME} baseIpAddress
+
+# Implements all ports as AXI4 64bit interface
+config_interface -m_axi_addr64
+
+#Check which command
+set command [lindex $argv 2]
+
+if {$command == "synthesis"} {
+   csynth_design
+} elseif {$command == "csim"} {
+   csim_design
+} elseif {$command == "ip"} {
+   export_design -format ip_catalog -ipname "hls_UDP_send_krnl" -display_name "hls udp send krnl" -vendor "ethz.systems.fpga" -version "1.0"
+} elseif {$command == "installip"} {
+   file mkdir ${IPREPO_DIR}
+   file delete -force ${IPREPO_DIR}/${PROJECT_NAME}
+   file copy -force ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_prj/solution1/impl/ip ${IPREPO_DIR}/${PROJECT_NAME}/
+} else {
+   puts "No valid command specified. Use vivado_hls -f make.tcl <synthesis|csim|ip> ."
+}
+
+exit
