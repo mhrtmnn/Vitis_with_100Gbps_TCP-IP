@@ -1657,7 +1657,11 @@ void tx_engine(	stream<extendedEvent>&			eventEng2txEng_event,
 	#pragma HLS stream variable=txEng_shift2pseudoFifo depth=2
 	#pragma HLS stream variable=txEng_tcpPkgBuffer0 depth=2
 	#pragma HLS stream variable=txEng_tcpPkgBuffer1 depth=16   // is forwarded immediately, size is not critical
+#if (WIDTH == 512)
 	#pragma HLS stream variable=txEng_tcpPkgBuffer2 depth=256  // critical, has to keep complete packet for checksum computation
+#else
+	#pragma HLS stream variable=txEng_tcpPkgBuffer2 depth=2048
+#endif
 	#pragma HLS stream variable=txEng_tcpPkgBuffer3 depth=2
 	#pragma HLS stream variable=txEng_tcpPkgBuffer4 depth=2
 	#pragma HLS stream variable=txEng_tcpPkgBuffer5 depth=2
