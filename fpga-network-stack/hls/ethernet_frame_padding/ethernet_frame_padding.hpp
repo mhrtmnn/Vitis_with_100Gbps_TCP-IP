@@ -28,8 +28,11 @@
 #define ETH_FRAME_PADDING
 
 #include "../axi_utils.hpp"
+#include "ethernet_frame_padding_config.hpp"
 
-void ethernet_fram_padding(	hls::stream<net_axis<64> >&			dataIn,
-							hls::stream<net_axis<64> >&			dataOut);
+
+void ethernet_frame_padding(
+	hls::stream<net_axis<DATA_WIDTH> >&			dataIn,
+	hls::stream<net_axis<DATA_WIDTH> >&			dataOut);
 
 #endif

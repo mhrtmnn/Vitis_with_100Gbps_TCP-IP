@@ -25,16 +25,12 @@
  * EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 #include "ethernet_frame_padding.hpp"
+#include "ethernet_frame_padding_config.hpp"
 
-void ethernet_frame_padding(hls::stream<net_axis<64> >&			dataIn,
-							hls::stream<net_axis<64> >&			dataOut)
+void ethernet_frame_padding_concrete(hls::stream<net_axis<64> >&	dataIn,
+                                     hls::stream<net_axis<64> >&	dataOut)
 {
-#pragma HLS PIPELINE II=1
-#pragma HLS INTERFACE ap_ctrl_none port=return
-
-#pragma HLS INTERFACE axis register port=dataIn name=s_axis
-#pragma HLS INTERFACE axis register port=dataOut name=m_axis
-
+	#pragma HLS INLINE
 
 	static ap_uint<1> state = 0;
 	static ap_uint<8> wordCounter = 0;
@@ -87,4 +83,64 @@ void ethernet_frame_padding(hls::stream<net_axis<64> >&			dataIn,
 		dataOut.write(sendWord);
 		break;
 	} //switch
+}
+
+void ethernet_frame_padding_concrete(hls::stream<net_axis<512> >&	dataIn,
+                                     hls::stream<net_axis<512> >&	dataOut)
+{
+	#pragma HLS INLINE
+
+	static ap_uint<1> state = 0;
+
+	switch(state)
+	{
+	case 0:
+		if (!dataIn.empty())
+		{
+			net_axis<512> currWord = dataIn.read();
+         if (currWord.last)
+         {
+            for (int i = 0; i < 64; ++i)
+            {
+               #pragma HLS UNROLL
+               if (currWord.keep[i] == 0)
+               {
+                  currWord.keep[i] = 1;
+                  currWord.data(i*8+7, i*8) = 0;
+               }
+            }
+         }
+         else
+         {
+            state = 1;
+         }
+			dataOut.write(currWord);
+		}
+		break;
+	case 1:
+      if (!dataIn.empty())
+      {
+         net_axis<512> currWord = dataIn.read();
+         dataOut.write(currWord);
+
+         if (currWord.last)
+         {
+            state = 0;
+         }
+      }
+		break;
+	} //switch
+}
+
+
+void ethernet_frame_padding(hls::stream<net_axis<DATA_WIDTH> >&	dataIn,
+                            hls::stream<net_axis<DATA_WIDTH> >&	dataOut)
+{
+	#pragma HLS PIPELINE II=1
+	#pragma HLS INTERFACE ap_ctrl_none port=return
+
+	#pragma HLS INTERFACE axis register port=dataIn name=s_axis
+	#pragma HLS INTERFACE axis register port=dataOut name=m_axis
+
+	ethernet_frame_padding_concrete(dataIn, dataOut);
 }

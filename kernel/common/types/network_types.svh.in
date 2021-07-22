@@ -17,7 +17,7 @@
 
 `define USE_${NETWORK_INTERFACE}G
 
-parameter NETWORK_STACK_WIDTH = 512;
+parameter NETWORK_STACK_WIDTH = ${DATA_WIDTH} * 8;
 parameter UDP_META_WIDTH = 176;
 
 // TCP/IP

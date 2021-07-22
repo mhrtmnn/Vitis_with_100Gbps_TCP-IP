@@ -35,14 +35,14 @@ endif()
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
-#configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding_config.hpp.in ethernet_frame_padding_config.hpp)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding_config.hpp.in ethernet_frame_padding_config.hpp)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/make.tcl.in make.tcl)
 
 
 set(EXAMPLE_HLS_DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding.cpp 
-    ${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding.hpp)
-#    ${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding_config.hpp.in)
+    ${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding.hpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/ethernet_frame_padding_config.hpp.in)
 
 
 #Setup HLS custom targets

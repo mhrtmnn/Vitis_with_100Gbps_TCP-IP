@@ -403,7 +403,7 @@ void mac_ip_encode( hls::stream<net_axis<WIDTH> >&			dataIn,
 
 	extract_ip_address(dataIn, dataStreamBuffer0, arpTableOut, regSubNetMask, regDefaultGateway);
 
-	mac_compute_ipv4_checksum(dataStreamBuffer0, dataStreamBuffer1, subSumFifo, true);
+	mac_compute_ipv4_checksum<WIDTH>(dataStreamBuffer0, dataStreamBuffer1, subSumFifo, true);
 	mac_finalize_ipv4_checksum<WIDTH/16>(subSumFifo, checksumFifo);
 
 	insert_ip_checksum(dataStreamBuffer1, checksumFifo, dataStreamBuffer2);

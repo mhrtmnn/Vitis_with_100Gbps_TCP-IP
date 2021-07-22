@@ -352,16 +352,29 @@ void compute_ipv4_checksum(	hls::stream<net_axis<512> >&	dataIn,
 							hls::stream<subSums<32> >&		subSumFiFoOut,
 							const bool						skipChecksum=false);
 
-// SOME SOLUTION IS NEEDED, THIS IS TERRIBLE
-void mac_compute_ipv4_checksum(	hls::stream<net_axis<512> >&	dataIn,
-							hls::stream<net_axis<512> >&	dataOut,
-							hls::stream<subSums<32> >&		subSumFiFoOut,
-							const bool						skipChecksum=false);
+//A hack to Vitis working flow
+//In vitis, module with same name used in different ips generates compile errors
+template<int WIDTH>
+void mac_compute_ipv4_checksum(hls::stream<net_axis<WIDTH> >&   dataIn,
+                               hls::stream<net_axis<WIDTH> >&   dataOut,
+                               hls::stream<subSums<WIDTH/16> >& subSumFiFoOut,
+                               const bool                       skipChecksum=false)
+{
+	#pragma HLS PIPELINE II=1
+	#pragma HLS INLINE off
+	compute_ipv4_checksum(dataIn, dataOut, subSumFiFoOut, skipChecksum);
+}
 
-void ip_handler_compute_ipv4_checksum(	hls::stream<net_axis<512> >&	dataIn,
-							hls::stream<net_axis<512> >&	dataOut,
-							hls::stream<subSums<32> >&		subSumFiFoOut,
-							const bool						skipChecksum=false);
+template<int WIDTH>
+void ip_handler_compute_ipv4_checksum(hls::stream<net_axis<WIDTH> >&   dataIn,
+                                      hls::stream<net_axis<WIDTH> >&   dataOut,
+                                      hls::stream<subSums<WIDTH/16> >& subSumFiFoOut,
+                                      const bool                       skipChecksum=false)
+{
+	#pragma HLS PIPELINE II=1
+	#pragma HLS INLINE off
+	compute_ipv4_checksum(dataIn, dataOut, subSumFiFoOut, skipChecksum);
+}
 
 //A hack to Vitis working flow
 //In vitis, module with same name used in different ips generates compile errors

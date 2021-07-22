@@ -529,7 +529,7 @@ void ip_handler(hls::stream<net_axis<WIDTH> >&		s_axis_raw,
 
 	extract_ip_meta(ipDataFifo, ipDataMetaFifo, ipv4ProtocolFifo, validIpAddressFifo, myIpAddress);
 
-	ip_handler_compute_ipv4_checksum(ipDataMetaFifo, ipDataCheckFifo, iph_subSumsFifoOut);
+	ip_handler_compute_ipv4_checksum<WIDTH>(ipDataMetaFifo, ipDataCheckFifo, iph_subSumsFifoOut);
 
 	ip_handler_check_ipv4_checksum<WIDTH/16>(iph_subSumsFifoOut, validChecksumFifo);
 
