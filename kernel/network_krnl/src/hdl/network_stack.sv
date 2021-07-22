@@ -127,6 +127,11 @@ axi_stream #(.WIDTH(WIDTH))     axis_iph_to_icmp_slice();
 axi_stream #(.WIDTH(WIDTH))     axis_iph_to_icmpv6_slice();
 axi_stream #(.WIDTH(WIDTH))     axis_iph_to_rocev6_slice();
 
+//Slice connections on TX path
+axi_stream #(.WIDTH(WIDTH))     axis_net_not_padded();
+axi_stream #(.WIDTH(WIDTH))     axis_net_not_padded_reg();
+axi_stream #(.WIDTH(WIDTH))     axis_net_padded();
+
 //Slice connections on RX path
 axi_stream #(.WIDTH(WIDTH))     axis_arp_slice_to_arp();
 axi_stream #(.WIDTH(64))        axis_icmp_slice_to_icmp();
@@ -138,10 +143,10 @@ axi_stream #(.WIDTH(WIDTH))     axis_mie_to_intercon();
 
 //Slice connections on RX path
 axi_stream #(.WIDTH(WIDTH))     axis_arp_to_arp_slice();
-axi_stream #(.WIDTH(64))        axis_icmp_to_icmp_slice(); //TODO
+axi_stream #(.WIDTH(64))        axis_icmp_to_icmp_slice();
 
 // ICMP
-axi_stream #(.WIDTH(512))       axis_icmp_slice_to_merge();
+axi_stream #(.WIDTH(WIDTH))     axis_icmp_slice_to_merge();
 
 //TCP
 axi_stream #(.WIDTH(WIDTH))     axis_iph_to_toe_slice();
@@ -287,7 +292,7 @@ assign ip_address_used = iph_ip_address;
  * IP handler
  */
 
-axis_data_reg inst_reg_net_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(s_axis_net), .m_axis(axis_slice_to_ibh));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_net_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(s_axis_net), .m_axis(axis_slice_to_ibh));
  
 ip_handler_ip ip_handler_inst (
 .m_axis_arp_TVALID(axis_iph_to_arp_slice.valid), // output AXI4Stream_M_TVALID
@@ -363,9 +368,10 @@ assign axis_ipv6_to_intercon.last = 1'b0;
 // IP handler -> out slices
 
 // ARP
-axis_data_reg inst_reg_arp_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_arp_slice), .m_axis(axis_arp_slice_to_arp));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_arp_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_arp_slice), .m_axis(axis_arp_slice_to_arp));
 
 // ICMP
+if (WIDTH == 512) begin
 axis_512_to_64_converter icmp_in_data_converter (
   .aclk(net_clk),
   .aresetn(net_aresetn_r),
@@ -380,7 +386,15 @@ axis_512_to_64_converter icmp_in_data_converter (
   .m_axis_tkeep(axis_icmp_slice_to_icmp.keep),
   .m_axis_tlast(axis_icmp_slice_to_icmp.last)
 );
+end
+else if (WIDTH == 64) begin
+  axis_data_reg #(.WIDTH(64)) icmp_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_icmp_slice), .m_axis(axis_icmp_slice_to_icmp));
+end
+else begin
+  $error("Unsupported WIDTH!");
+end
 
+// hardcoded AXIS width of 64bit
 icmp_server_ip icmp_server_inst (
   .s_axis_TVALID(axis_icmp_slice_to_icmp.valid),    // input wire dataIn_TVALID
   .s_axis_TREADY(axis_icmp_slice_to_icmp.ready),    // output wire dataIn_TREADY
@@ -406,6 +420,7 @@ icmp_server_ip icmp_server_inst (
   .ap_rst_n(net_aresetn_r)                                // input wire ap_rst_n
 );
 
+if (WIDTH == 512) begin
 axis_64_to_512_converter icmp_out_data_converter (
   .aclk(net_clk),
   .aresetn(net_aresetn_r),
@@ -422,13 +437,20 @@ axis_64_to_512_converter icmp_out_data_converter (
   .m_axis_tlast(axis_icmp_slice_to_merge.last),
   .m_axis_tdest()
 );
+end
+else if (WIDTH == 64) begin
+  axis_data_reg #(.WIDTH(64)) icmp_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_icmp_to_icmp_slice), .m_axis(axis_icmp_slice_to_merge));
+end
+else begin
+  $error("Unsupported WIDTH!");
+end
 
 // UDP Input Slice
-axis_data_reg inst_reg_udp_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_udp_slice), .m_axis(axis_udp_slice_to_udp));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_udp_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_udp_slice), .m_axis(axis_udp_slice_to_udp));
 
 // TOE Input Slice
 
-axis_data_reg inst_reg_toe_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_toe_slice), .m_axis(axis_toe_slice_to_toe));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_toe_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_iph_to_toe_slice), .m_axis(axis_toe_slice_to_toe));
 
 // assign axis_iph_to_toe_slice.ready = 1'b0;
 
@@ -438,11 +460,11 @@ assign axis_iph_to_roce_slice.ready = 1'b0;
 // TX
 
 // UDP Output Slice
-axis_data_reg inst_reg_udp_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_udp_to_udp_slice), .m_axis(axis_udp_slice_to_merge));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_udp_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_udp_to_udp_slice), .m_axis(axis_udp_slice_to_merge));
 
 // TOE Output Slice
 
-axis_data_reg inst_reg_toe_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_toe_to_toe_slice), .m_axis(axis_toe_slice_to_merge));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_toe_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_toe_to_toe_slice), .m_axis(axis_toe_slice_to_merge));
 
 // assign axis_toe_slice_to_merge.valid = 1'b0;
 // assign axis_toe_slice_to_merge.data = 0;
@@ -456,6 +478,7 @@ assign axis_roce_slice_to_merge.keep = 0;
 assign axis_roce_slice_to_merge.last = 1'b0;
 
 // Merger out
+if (WIDTH == 512) begin
 axis_interconnect_512_4to1 ip_merger (
   .ACLK(net_clk),                                  // input wire ACLK
   .ARESETN(net_aresetn_r),                            // input wire ARESETN
@@ -504,6 +527,61 @@ axis_interconnect_512_4to1 ip_merger (
   .S02_ARB_REQ_SUPPRESS(1'b0),  // input wire S02_ARB_REQ_SUPPRESS
   .S03_ARB_REQ_SUPPRESS(1'b0)  // input wire S02_ARB_REQ_SUPPRESS
 );
+end
+else if (WIDTH == 64) begin
+axis_interconnect_64_4to1 ip_merger (
+  .ACLK(net_clk),                            // input wire ACLK
+  .ARESETN(net_aresetn_r),                   // input wire ARESETN
+  .S00_AXIS_ACLK(net_clk),                   // input wire S00_AXIS_ACLK
+  .S01_AXIS_ACLK(net_clk),                   // input wire S01_AXIS_ACLK
+  .S02_AXIS_ACLK(net_clk),                   // input wire S02_AXIS_ACLK
+  .S03_AXIS_ACLK(net_clk),                   // input wire S03_AXIS_ACLK
+  .S00_AXIS_ARESETN(net_aresetn_r),          // input wire S00_AXIS_ARESETN
+  .S01_AXIS_ARESETN(net_aresetn_r),          // input wire S01_AXIS_ARESETN
+  .S02_AXIS_ARESETN(net_aresetn_r),          // input wire S02_AXIS_ARESETN
+  .S03_AXIS_ARESETN(net_aresetn_r),          // input wire S03_AXIS_ARESETN
+  
+  .S00_AXIS_TVALID(axis_icmp_slice_to_merge.valid),           // input wire S00_AXIS_TVALID
+  .S00_AXIS_TREADY(axis_icmp_slice_to_merge.ready),           // output wire S00_AXIS_TREADY
+  .S00_AXIS_TDATA(axis_icmp_slice_to_merge.data),             // input wire [63 : 0] S00_AXIS_TDATA
+  .S00_AXIS_TKEEP(axis_icmp_slice_to_merge.keep),             // input wire [7 : 0] S00_AXIS_TKEEP
+  .S00_AXIS_TLAST(axis_icmp_slice_to_merge.last),             // input wire S00_AXIS_TLAST
+
+  .S01_AXIS_TVALID(axis_udp_slice_to_merge.valid),            // input wire S01_AXIS_TVALID
+  .S01_AXIS_TREADY(axis_udp_slice_to_merge.ready),            // output wire S01_AXIS_TREADY
+  .S01_AXIS_TDATA(axis_udp_slice_to_merge.data),              // input wire [63 : 0] S01_AXIS_TDATA
+  .S01_AXIS_TKEEP(axis_udp_slice_to_merge.keep),              // input wire [7 : 0] S01_AXIS_TKEEP
+  .S01_AXIS_TLAST(axis_udp_slice_to_merge.last),              // input wire S01_AXIS_TLAST
+
+  .S02_AXIS_TVALID(axis_toe_slice_to_merge.valid),            // input wire S02_AXIS_TVALID
+  .S02_AXIS_TREADY(axis_toe_slice_to_merge.ready),            // output wire S02_AXIS_TREADY
+  .S02_AXIS_TDATA(axis_toe_slice_to_merge.data),              // input wire [63 : 0] S02_AXIS_TDATA
+  .S02_AXIS_TKEEP(axis_toe_slice_to_merge.keep),              // input wire [7 : 0] S02_AXIS_TKEEP
+  .S02_AXIS_TLAST(axis_toe_slice_to_merge.last),              // input wire S02_AXIS_TLAST
+
+  .S03_AXIS_TVALID(axis_roce_slice_to_merge.valid),           // input wire S01_AXIS_TVALID
+  .S03_AXIS_TREADY(axis_roce_slice_to_merge.ready),           // output wire S01_AXIS_TREADY
+  .S03_AXIS_TDATA(axis_roce_slice_to_merge.data),             // input wire [63 : 0] S01_AXIS_TDATA
+  .S03_AXIS_TKEEP(axis_roce_slice_to_merge.keep),             // input wire [7 : 0] S01_AXIS_TKEEP
+  .S03_AXIS_TLAST(axis_roce_slice_to_merge.last),             // input wire S01_AXIS_TLAST
+
+  .M00_AXIS_ACLK(net_clk),                                    // input wire M00_AXIS_ACLK
+  .M00_AXIS_ARESETN(net_aresetn_r),                           // input wire M00_AXIS_ARESETN
+  .M00_AXIS_TVALID(axis_intercon_to_mie.valid),               // output wire M00_AXIS_TVALID
+  .M00_AXIS_TREADY(axis_intercon_to_mie.ready),               // input wire M00_AXIS_TREADY
+  .M00_AXIS_TDATA(axis_intercon_to_mie.data),                 // output wire [63 : 0] M00_AXIS_TDATA
+  .M00_AXIS_TKEEP(axis_intercon_to_mie.keep),                 // output wire [7 : 0] M00_AXIS_TKEEP
+  .M00_AXIS_TLAST(axis_intercon_to_mie.last),                 // output wire M00_AXIS_TLAST
+
+  .S00_ARB_REQ_SUPPRESS(1'b0),  // input wire S00_ARB_REQ_SUPPRESS
+  .S01_ARB_REQ_SUPPRESS(1'b0),  // input wire S01_ARB_REQ_SUPPRESS
+  .S02_ARB_REQ_SUPPRESS(1'b0),  // input wire S02_ARB_REQ_SUPPRESS
+  .S03_ARB_REQ_SUPPRESS(1'b0)   // input wire S02_ARB_REQ_SUPPRESS
+);
+end
+else begin
+  $error("Unsupported WIDTH!");
+end
 
 /**
  * ARP lookup
@@ -543,6 +621,7 @@ mac_ip_encode_ip mac_ip_encode_inst (
  * Merges IP and ARP 
  */
 
+if (WIDTH == 512) begin
 axis_interconnect_512_2to1 mac_merger (
   .ACLK(net_clk), // input ACLK
   .ARESETN(net_aresetn_r), // input ARESETN
@@ -572,15 +651,69 @@ axis_interconnect_512_2to1 mac_merger (
   
   .M00_AXIS_ACLK(net_clk), // input M00_AXIS_ACLK
   .M00_AXIS_ARESETN(net_aresetn_r), // input M00_AXIS_ARESETN
-  .M00_AXIS_TVALID(m_axis_net.valid), // output M00_AXIS_TVALID
-  .M00_AXIS_TREADY(m_axis_net.ready), // input M00_AXIS_TREADY
-  .M00_AXIS_TDATA(m_axis_net.data), // output [63 : 0] M00_AXIS_TDATA
-  .M00_AXIS_TKEEP(m_axis_net.keep), // output [7 : 0] M00_AXIS_TKEEP
-  .M00_AXIS_TLAST(m_axis_net.last), // output M00_AXIS_TLAST
+  .M00_AXIS_TVALID(axis_net_not_padded.valid), // output M00_AXIS_TVALID
+  .M00_AXIS_TREADY(axis_net_not_padded.ready), // input M00_AXIS_TREADY
+  .M00_AXIS_TDATA(axis_net_not_padded.data), // output [63 : 0] M00_AXIS_TDATA
+  .M00_AXIS_TKEEP(axis_net_not_padded.keep), // output [7 : 0] M00_AXIS_TKEEP
+  .M00_AXIS_TLAST(axis_net_not_padded.last), // output M00_AXIS_TLAST
   .S00_ARB_REQ_SUPPRESS(1'b0), // input S00_ARB_REQ_SUPPRESS
   .S01_ARB_REQ_SUPPRESS(1'b0) // input S01_ARB_REQ_SUPPRESS
   //.S02_ARB_REQ_SUPPRESS(1'b0) // input S01_ARB_REQ_SUPPRESS
 );
+end
+else if (WIDTH == 64) begin
+axis_interconnect_64_2to1 mac_merger (
+  .ACLK(net_clk), // input ACLK
+  .ARESETN(net_aresetn_r), // input ARESETN
+  .S00_AXIS_ACLK(net_clk), // input S00_AXIS_ACLK
+  .S01_AXIS_ACLK(net_clk), // input S01_AXIS_ACLK
+  .S00_AXIS_ARESETN(net_aresetn_r), // input S00_AXIS_ARESETN
+  .S01_AXIS_ARESETN(net_aresetn_r), // input S01_AXIS_ARESETN
+  .S00_AXIS_TVALID(axis_arp_to_arp_slice.valid), // input S00_AXIS_TVALID
+  .S00_AXIS_TREADY(axis_arp_to_arp_slice.ready), // output S00_AXIS_TREADY
+  .S00_AXIS_TDATA(axis_arp_to_arp_slice.data), // input [63 : 0] S00_AXIS_TDATA
+  .S00_AXIS_TKEEP(axis_arp_to_arp_slice.keep), // input [7 : 0] S00_AXIS_TKEEP
+  .S00_AXIS_TLAST(axis_arp_to_arp_slice.last), // input S00_AXIS_TLAST
+  
+  .S01_AXIS_TVALID(axis_mie_to_intercon.valid), // input S01_AXIS_TVALID
+  .S01_AXIS_TREADY(axis_mie_to_intercon.ready), // output S01_AXIS_TREADY
+  .S01_AXIS_TDATA(axis_mie_to_intercon.data), // input [63 : 0] S01_AXIS_TDATA
+  .S01_AXIS_TKEEP(axis_mie_to_intercon.keep), // input [7 : 0] S01_AXIS_TKEEP
+  .S01_AXIS_TLAST(axis_mie_to_intercon.last), // input S01_AXIS_TLAST
+  
+  .M00_AXIS_ACLK(net_clk), // input M00_AXIS_ACLK
+  .M00_AXIS_ARESETN(net_aresetn_r), // input M00_AXIS_ARESETN
+  .M00_AXIS_TVALID(axis_net_not_padded.valid), // output M00_AXIS_TVALID
+  .M00_AXIS_TREADY(axis_net_not_padded.ready), // input M00_AXIS_TREADY
+  .M00_AXIS_TDATA(axis_net_not_padded.data), // output [63 : 0] M00_AXIS_TDATA
+  .M00_AXIS_TKEEP(axis_net_not_padded.keep), // output [7 : 0] M00_AXIS_TKEEP
+  .M00_AXIS_TLAST(axis_net_not_padded.last), // output M00_AXIS_TLAST
+  .S00_ARB_REQ_SUPPRESS(1'b0), // input S00_ARB_REQ_SUPPRESS
+  .S01_ARB_REQ_SUPPRESS(1'b0) // input S01_ARB_REQ_SUPPRESS
+);
+end
+else begin
+  $error("Unsupported WIDTH!");
+end
+
+axis_data_reg_array #(.N_STAGES(4), .WIDTH(WIDTH)) inst_reg_array_padding_in (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_net_not_padded), .m_axis(axis_net_not_padded_reg));
+
+ethernet_frame_padding_ip ethernet_frame_padding_inst (
+  .m_axis_TVALID(axis_net_padded.valid),
+  .m_axis_TREADY(axis_net_padded.ready),
+  .m_axis_TDATA(axis_net_padded.data),
+  .m_axis_TKEEP(axis_net_padded.keep),
+  .m_axis_TLAST(axis_net_padded.last),
+  .s_axis_TVALID(axis_net_not_padded_reg.valid),
+  .s_axis_TREADY(axis_net_not_padded_reg.ready),
+  .s_axis_TDATA(axis_net_not_padded_reg.data),
+  .s_axis_TKEEP(axis_net_not_padded_reg.keep),
+  .s_axis_TLAST(axis_net_not_padded_reg.last),
+  .ap_clk(net_clk),
+  .ap_rst_n(net_aresetn_r)
+);
+
+axis_data_reg_array #(.N_STAGES(4), .WIDTH(WIDTH)) inst_reg_array_padding_out (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(axis_net_padded), .m_axis(m_axis_net));
 
 logic[15:0] arp_request_pkg_counter;
 logic[15:0] arp_reply_pkg_counter;
@@ -695,8 +828,8 @@ tcp_stack #(
 axis_meta #(.WIDTH(UDP_META_WIDTH))    m_axis_udp_rx_metadata_r();
 axis_meta #(.WIDTH(UDP_META_WIDTH))    s_axis_udp_tx_metadata_r();
 
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) m_axis_udp_rx_data_r();
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) s_axis_udp_tx_data_r();
+axi_stream #(.WIDTH(WIDTH)) m_axis_udp_rx_data_r();
+axi_stream #(.WIDTH(WIDTH)) s_axis_udp_tx_data_r();
 
 udp_stack #(
       .UDP_EN(UDP_EN),
@@ -720,8 +853,8 @@ udp_stack #(
       
 );
 
-axis_data_reg inst_reg_udp_data_m (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(m_axis_udp_rx_data_r), .m_axis(m_axis_udp_rx_data));
-axis_data_reg inst_reg_udp_data_s (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(s_axis_udp_tx_data), .m_axis(s_axis_udp_tx_data_r));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_udp_data_m (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(m_axis_udp_rx_data_r), .m_axis(m_axis_udp_rx_data));
+axis_data_reg #(.WIDTH(WIDTH)) inst_reg_udp_data_s (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(s_axis_udp_tx_data), .m_axis(s_axis_udp_tx_data_r));
 axis_udp_meta_reg inst_reg_udp_meta_m (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(m_axis_udp_rx_metadata_r), .m_axis(m_axis_udp_rx_metadata));
 axis_udp_meta_reg inst_reg_udp_meta_s (.aclk(net_clk), .aresetn(net_aresetn_r), .s_axis(s_axis_udp_tx_metadata), .m_axis(s_axis_udp_tx_metadata_r));
 

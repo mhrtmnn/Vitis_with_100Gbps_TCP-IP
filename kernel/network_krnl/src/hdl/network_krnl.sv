@@ -64,8 +64,8 @@ module network_krnl #(
   parameter integer C_M00_AXI_DATA_WIDTH                      = 512,
   parameter integer C_M01_AXI_ADDR_WIDTH                      = 64 ,
   parameter integer C_M01_AXI_DATA_WIDTH                      = 512,
-  parameter integer C_M_AXIS_UDP_RX_TDATA_WIDTH               = 512,
-  parameter integer C_S_AXIS_UDP_TX_TDATA_WIDTH               = 512,
+  parameter integer C_M_AXIS_UDP_RX_TDATA_WIDTH               = NETWORK_STACK_WIDTH,
+  parameter integer C_S_AXIS_UDP_TX_TDATA_WIDTH               = NETWORK_STACK_WIDTH,
   parameter integer C_M_AXIS_UDP_RX_META_TDATA_WIDTH          = 256,
   parameter integer C_S_AXIS_UDP_TX_META_TDATA_WIDTH          = 256,
   parameter integer C_S_AXIS_TCP_LISTEN_PORT_TDATA_WIDTH      = 16 ,
@@ -76,12 +76,12 @@ module network_krnl #(
   parameter integer C_M_AXIS_TCP_NOTIFICATION_TDATA_WIDTH     = 128,
   parameter integer C_S_AXIS_TCP_READ_PKG_TDATA_WIDTH         = 32 ,
   parameter integer C_M_AXIS_TCP_RX_META_TDATA_WIDTH          = 16 ,
-  parameter integer C_M_AXIS_TCP_RX_DATA_TDATA_WIDTH          = 512,
+  parameter integer C_M_AXIS_TCP_RX_DATA_TDATA_WIDTH          = NETWORK_STACK_WIDTH,
   parameter integer C_S_AXIS_TCP_TX_META_TDATA_WIDTH          = 32 ,
-  parameter integer C_S_AXIS_TCP_TX_DATA_TDATA_WIDTH          = 512,
+  parameter integer C_S_AXIS_TCP_TX_DATA_TDATA_WIDTH          = NETWORK_STACK_WIDTH,
   parameter integer C_M_AXIS_TCP_TX_STATUS_TDATA_WIDTH        = 64 ,
-  parameter integer C_AXIS_NET_TX_TDATA_WIDTH                 = 512,
-  parameter integer C_AXIS_NET_RX_TDATA_WIDTH                 = 512
+  parameter integer C_AXIS_NET_TX_TDATA_WIDTH                 = NETWORK_STACK_WIDTH,
+  parameter integer C_AXIS_NET_RX_TDATA_WIDTH                 = NETWORK_STACK_WIDTH
 )
 (
   // System Signals
@@ -400,7 +400,7 @@ axis_meta #(.WIDTH(176)) s_axis_udp_tx_metadata();
 //   .m_axis_tlast()
 // );
 
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) m_axis_udp_rx_data();
+axi_stream #(.WIDTH(C_M_AXIS_UDP_RX_TDATA_WIDTH)) m_axis_udp_rx_data();
 
 // axis_data_fifo_cc_512 m_axis_udp_rx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -419,7 +419,7 @@ axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) m_axis_udp_rx_data();
 //   .m_axis_tlast(m_axis_udp_rx_tlast)
 // );
 
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) s_axis_udp_tx_data();
+axi_stream #(.WIDTH(C_S_AXIS_UDP_TX_TDATA_WIDTH)) s_axis_udp_tx_data();
 
 // axis_data_fifo_cc_512 s_axis_udp_tx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -596,7 +596,7 @@ axis_meta #(.WIDTH(16))     m_axis_tcp_rx_meta();
 //   .m_axis_tlast(m_axis_tcp_rx_meta_tlast)
 // );
 
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH))    m_axis_tcp_rx_data();
+axi_stream #(.WIDTH(C_S_AXIS_TCP_TX_DATA_TDATA_WIDTH))    m_axis_tcp_rx_data();
 
 // axis_data_fifo_cc_512 m_axis_tcp_rx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -634,7 +634,7 @@ axis_data_fifo_32_d256 s_axis_tcp_tx_meta_fifo (
   .m_axis_tlast()
 );
 
-axi_stream #(.WIDTH(NETWORK_STACK_WIDTH))    s_axis_tcp_tx_data();
+axi_stream #(.WIDTH(C_M_AXIS_TCP_RX_DATA_TDATA_WIDTH))    s_axis_tcp_tx_data();
 
 // axis_data_fifo_cc_512 s_axis_tcp_tx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -673,7 +673,7 @@ axis_data_fifo_64_d256 m_axis_tcp_tx_status_fifo (
 );
 
 //Net interface
-axi_stream axis_net_rx_data_aclk();
+axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) axis_net_rx_data_aclk();
 
 // axis_data_fifo_cc_512 axis_net_rx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -692,7 +692,7 @@ axi_stream axis_net_rx_data_aclk();
 //   .m_axis_tlast(axis_net_rx_data_aclk.last)
 // );
 
-axi_stream axis_net_tx_data_aclk();
+axi_stream #(.WIDTH(NETWORK_STACK_WIDTH)) axis_net_tx_data_aclk();
 
 // axis_data_fifo_cc_512 axis_net_tx_data_crossing (
 //   //.s_axis_aresetn(~(sys_reset | user_rx_reset)),
@@ -1029,6 +1029,7 @@ mem_single_inf #(
 
 // NETWORK STACK
 network_top #(
+  .NETWORK_STACK_WIDTH ( NETWORK_STACK_WIDTH ),
   .C_S_AXI_ADDR_WIDTH ( C_S_AXI_CONTROL_ADDR_WIDTH ),
   .C_S_AXI_DATA_WIDTH ( C_S_AXI_CONTROL_DATA_WIDTH )
 )inst_network_top (

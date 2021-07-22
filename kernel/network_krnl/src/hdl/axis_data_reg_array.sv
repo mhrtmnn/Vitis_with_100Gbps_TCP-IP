@@ -2,6 +2,7 @@
 `include "network_intf.svh"
 
 module axis_data_reg_array #(
+    parameter                               WIDTH = 512,
     parameter integer                       N_STAGES = 2
 ) (
     input  wire                             aclk,
@@ -13,7 +14,7 @@ module axis_data_reg_array #(
 // ----------------------------------------------------------------------------------------------------------------------- 
 // -- Register slices ---------------------------------------------------------------------------------------------------- 
 // ----------------------------------------------------------------------------------------------------------------------- 
-axi_stream axis_int [N_STAGES+1] ();
+axi_stream #(.WIDTH(WIDTH)) axis_int [N_STAGES+1] ();
 
 always_comb begin
     axis_int[0].valid           = s_axis.valid;
@@ -30,7 +31,12 @@ always_comb begin
 end
 
 for(genvar i = 0; i < N_STAGES; i++) begin
-    axis_data_reg inst_reg (.aclk(aclk), .aresetn(aresetn), .s_axis(axis_int[i]), .m_axis(axis_int[i+1]));  
+    axis_data_reg #(.WIDTH(WIDTH)) inst_reg (
+        .aclk(aclk),
+        .aresetn(aresetn),
+        .s_axis(axis_int[i]),
+        .m_axis(axis_int[i+1])
+    );
 end
 
 endmodule

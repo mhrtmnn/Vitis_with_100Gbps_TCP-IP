@@ -6,6 +6,7 @@
 `define IP_VERSION4
 
 module network_top #(parameter
+    NETWORK_STACK_WIDTH = 512,
     C_S_AXI_ADDR_WIDTH = 12,
     C_S_AXI_DATA_WIDTH = 32
 )(
@@ -226,6 +227,7 @@ end
 // );
 
 network_stack #(
+    .WIDTH(NETWORK_STACK_WIDTH), 
     .UDP_EN(UDP_STACK_EN), 
     .TCP_EN(TCP_STACK_EN),
     .RX_DDR_BYPASS_EN(TCP_RX_BYPASS_EN),
