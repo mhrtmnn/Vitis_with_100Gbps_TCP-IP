@@ -9,7 +9,7 @@ if (NOT VIVADO_FOUND)
   message(FATAL_ERROR "Vivado not found.")
 endif()
 
-set(PATH_SIM_EXPORT "~/Desktop/sim_export/xsim" CACHE STRING "Path to exported simulation")
+set(PATH_SIM_EXPORT "~/Desktop/sim_export" CACHE STRING "Path to exported simulation")
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
