@@ -62,7 +62,7 @@ assign_bd_address -offset 0x2000000 -range 64K [get_bd_addr_segs {user_krnl_0/s_
 assign_bd_address -offset 0x2010000 -range 64K [get_bd_addr_segs {network_krnl_0/s_axi_control/Reg0}]
 
 # simple plugin system to allow for further cores/connections within the PE
-set plugin_file "$repo_hls_cores/../../../kernel/tapasco_PE/PE_plugin.tcl"
+set plugin_file "$repo_hls_cores/../../../kernel/tapasco_PE/${prj_name}_plugin.tcl"
 if { [file exists $plugin_file] == 1} {
 	puts "Running plugin"
 	source $plugin_file
