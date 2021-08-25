@@ -55,11 +55,11 @@ connect_bd_net [get_bd_pins smartconnect_0/aresetn] [get_bd_ports ap_rst_n_0]
 connect_bd_intf_net [get_bd_intf_pins smartconnect_0/M00_AXI] [get_bd_intf_pins user_krnl_0/s_axi_AXILiteS]
 connect_bd_intf_net [get_bd_intf_pins smartconnect_0/M01_AXI] [get_bd_intf_pins network_krnl_0/s_axi_control]
 make_bd_intf_pins_external  [get_bd_intf_pins smartconnect_0/S00_AXI]
-set_property -dict [list CONFIG.DATA_WIDTH {64} CONFIG.PROTOCOL {AXI4LITE}] [get_bd_intf_ports S00_AXI_0]
+set_property -dict [list CONFIG.ADDR_WIDTH {17} CONFIG.DATA_WIDTH {64} CONFIG.PROTOCOL {AXI4LITE}] [get_bd_intf_ports S00_AXI_0]
 
 # assign addr
-assign_bd_address -offset 0x2000000 -range 64K [get_bd_addr_segs {user_krnl_0/s_axi_AXILiteS/*}]
-assign_bd_address -offset 0x2010000 -range 64K [get_bd_addr_segs {network_krnl_0/s_axi_control/Reg0}]
+assign_bd_address -offset 0x00000 -range 64K [get_bd_addr_segs {user_krnl_0/s_axi_AXILiteS/*}]
+assign_bd_address -offset 0x10000 -range 64K [get_bd_addr_segs {network_krnl_0/s_axi_control/Reg0}]
 
 # simple plugin system to allow for further cores/connections within the PE
 set plugin_file "$repo_hls_cores/../../../kernel/tapasco_PE/${prj_name}_plugin.tcl"
