@@ -20,8 +20,6 @@ make_bd_pins_external  [get_bd_pins user_krnl_0/ap_clk]
 make_bd_pins_external  [get_bd_pins user_krnl_0/ap_rst_n]
 make_bd_pins_external  [get_bd_pins user_krnl_0/interrupt]
 
-make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/m01_axi]
-make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/m00_axi]
 make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/axis_net_tx]
 make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/axis_net_rx]
 
@@ -60,6 +58,35 @@ set_property -dict [list CONFIG.ADDR_WIDTH {17} CONFIG.DATA_WIDTH {64} CONFIG.PR
 # assign addr
 assign_bd_address -offset 0x00000 -range 64K [get_bd_addr_segs {user_krnl_0/s_axi_AXILiteS/*}]
 assign_bd_address -offset 0x10000 -range 64K [get_bd_addr_segs {network_krnl_0/s_axi_control/Reg0}]
+
+# Memory ports can either attach to tapasco's memory subsystem, or to internal BRAM
+if {$use_bram == 1} {
+	set bram_ctrl [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0]
+	set_property -dict [list \
+		CONFIG.DATA_WIDTH {512} \
+		CONFIG.SINGLE_PORT_BRAM {1} \
+		CONFIG.ECC_TYPE {0} \
+	] $bram_ctrl
+	connect_bd_net [get_bd_ports ap_rst_n_0] [get_bd_pins $bram_ctrl/s_axi_aresetn]
+	connect_bd_net [get_bd_ports ap_clk_0] [get_bd_pins $bram_ctrl/s_axi_aclk]
+
+	set bram_intercon [create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_1]
+	connect_bd_intf_net [get_bd_intf_pins $bram_intercon/M00_AXI] [get_bd_intf_pins $bram_ctrl/S_AXI]
+	connect_bd_intf_net [get_bd_intf_pins network_krnl_0/m00_axi] [get_bd_intf_pins $bram_intercon/S00_AXI]
+	connect_bd_intf_net [get_bd_intf_pins network_krnl_0/m01_axi] [get_bd_intf_pins $bram_intercon/S01_AXI]
+	connect_bd_net [get_bd_ports ap_rst_n_0] [get_bd_pins $bram_intercon/aresetn]
+	connect_bd_net [get_bd_ports ap_clk_0] [get_bd_pins $bram_intercon/aclk]
+
+	set bram_gen [create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0]
+	set_property -dict [list \
+		CONFIG.EN_SAFETY_CKT {false} \
+	] $bram_gen
+	connect_bd_intf_net [get_bd_intf_pins $bram_ctrl/BRAM_PORTA] [get_bd_intf_pins $bram_gen/BRAM_PORTA]
+	assign_bd_address -offset 0x00000000A0000000 -range 512K [get_bd_addr_segs {axi_bram_ctrl_0/S_AXI/Mem0 }]
+} else {
+	make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/m01_axi]
+	make_bd_intf_pins_external  [get_bd_intf_pins network_krnl_0/m00_axi]
+}
 
 # simple plugin system to allow for further cores/connections within the PE
 set plugin_file "$repo_hls_cores/../../../kernel/tapasco_PE/${prj_name}_plugin.tcl"

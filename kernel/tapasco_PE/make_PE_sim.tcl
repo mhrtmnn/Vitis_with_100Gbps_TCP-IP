@@ -24,36 +24,10 @@ Using sim dir    : $sim_export
 ==========================================="
 
 # base design
+set use_bram 1
 set build_dir "build_sim"
 source $src_dir/PE_base.tcl
 puts "Base design done!"
-
-# delete external pins, connect to internal BRAM instead
-delete_bd_objs [get_bd_intf_nets network_krnl_0_m00_axi] [get_bd_intf_ports m00_axi_0]
-delete_bd_objs [get_bd_intf_nets network_krnl_0_m01_axi] [get_bd_intf_ports m01_axi_0]
-
-set bram_ctrl [create_bd_cell -type ip -vlnv xilinx.com:ip:axi_bram_ctrl:4.1 axi_bram_ctrl_0]
-set_property -dict [list \
-	CONFIG.DATA_WIDTH {512} \
-	CONFIG.SINGLE_PORT_BRAM {1} \
-	CONFIG.ECC_TYPE {0} \
-] $bram_ctrl
-connect_bd_net [get_bd_ports ap_rst_n_0] [get_bd_pins $bram_ctrl/s_axi_aresetn]
-connect_bd_net [get_bd_ports ap_clk_0] [get_bd_pins $bram_ctrl/s_axi_aclk]
-
-set bram_intercon [create_bd_cell -type ip -vlnv xilinx.com:ip:smartconnect:1.0 smartconnect_1]
-connect_bd_intf_net [get_bd_intf_pins $bram_intercon/M00_AXI] [get_bd_intf_pins $bram_ctrl/S_AXI]
-connect_bd_intf_net [get_bd_intf_pins network_krnl_0/m00_axi] [get_bd_intf_pins $bram_intercon/S00_AXI]
-connect_bd_intf_net [get_bd_intf_pins network_krnl_0/m01_axi] [get_bd_intf_pins $bram_intercon/S01_AXI]
-connect_bd_net [get_bd_ports ap_rst_n_0] [get_bd_pins $bram_intercon/aresetn]
-connect_bd_net [get_bd_ports ap_clk_0] [get_bd_pins $bram_intercon/aclk]
-
-set bram_gen [create_bd_cell -type ip -vlnv xilinx.com:ip:blk_mem_gen:8.4 blk_mem_gen_0]
-set_property -dict [list \
-	CONFIG.EN_SAFETY_CKT {false} \
-] $bram_gen
-connect_bd_intf_net [get_bd_intf_pins $bram_ctrl/BRAM_PORTA] [get_bd_intf_pins $bram_gen/BRAM_PORTA]
-assign_bd_address -offset 0x00000000A0000000 -range 1M [get_bd_addr_segs {axi_bram_ctrl_0/S_AXI/Mem0 }]
 
 save_bd_design
 generate_target all [get_files  $prj_name.bd]

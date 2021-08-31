@@ -22,6 +22,9 @@ set prj_name       [lindex $argv 3]
 set user_ip_name "esa.informatik.tu-darmstadt.de:user:$prj_name:1.0"
 set repo_nw_kernel "../network_krnl/PackagedPE"
 
+# set to 1 to use internal BRAM instead of DRAM subsystem for RX/TX buffers
+set use_bram 0
+
 puts "===========================================
 Using HLS ip repo: $repo_hls_cores
 Using NW  ip repo: $repo_nw_kernel
