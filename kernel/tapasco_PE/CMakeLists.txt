@@ -9,8 +9,6 @@ if (NOT VIVADO_FOUND)
   message(FATAL_ERROR "Vivado not found.")
 endif()
 
-set(PATH_SIM_EXPORT "~/Desktop/sim_export" CACHE STRING "Path to exported simulation")
-
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 #Setup custom targets
@@ -19,7 +17,7 @@ add_custom_target(tapasco_pe
 )
 
 add_custom_target(tapasco_pe_sim
-  COMMAND ${VIVADO_BINARY} -mode batch -source ${CMAKE_CURRENT_SOURCE_DIR}/make_PE_sim.tcl -tclargs ${FPGA_PART} ${IPREPO_DIR} ${CMAKE_CURRENT_SOURCE_DIR} ${PATH_SIM_EXPORT} $(PE)
+  COMMAND ${VIVADO_BINARY} -mode batch -source ${CMAKE_CURRENT_SOURCE_DIR}/make_PE_sim.tcl -tclargs ${FPGA_PART} ${IPREPO_DIR} ${CMAKE_CURRENT_SOURCE_DIR} $(PATH_SIM_EXPORT) $(PE)
 )
 
 add_custom_target(update_tapasco_pe
