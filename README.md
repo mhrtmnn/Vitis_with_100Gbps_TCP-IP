@@ -2,6 +2,14 @@
 
 This repository provides TCP/IP network support at 100 Gbit/s in Vitis and provides several examples to demonstrate the usage. 
 
+This repository is forked from [Vitis with 100 Gbps TCP/IP Network Stack](https://github.com/fpgasystems/Vitis_with_100Gbps_TCP-IP) and contains the following changes:
+- Build scripts for use with the [TaPaSCo](https://github.com/esa-tu-darmstadt/tapasco) framework
+- Build-time configurable bit width of data-carrying interfaces
+- Support for simulation, e.g. using [NetSimulator](https://git.esa.informatik.tu-darmstadt.de/net/net-sim)
+- Several bug fixes
+
+See [kernel/tapasco_PE/Readme.md](kernel/tapasco_PE/Readme.md) for more details on the TaPaSCo integration.
+
 ## Architecture Overview
 
 This repository creates designs with three Vitis kernels: `cmac` kernel, `network` kernel and `user` kernel. The `cmac` kernel and the `network` kernel serve as a common infrastructure for network functionality while the `user` kernel can be customized for each application.
